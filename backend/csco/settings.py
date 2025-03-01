@@ -8,35 +8,31 @@ ENV_PATH = BASE_DIR / "../env/.env"
 load_dotenv(ENV_PATH)
 
 # امنیت و تنظیمات اصلی
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "fallback-secret-key") # SECRET_KEY از .env خوانده می‌شود
-DEBUG = os.getenv("DEBUG", "False") == "True" # مقدار DEBUG از .env خوانده می‌شود
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").replace('"', '').split(",") # لیست هاست‌های مجاز
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "fallback-secret-key")
+DEBUG = os.getenv("DEBUG", "False") == "True"
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").replace('"', '').split(",")
 
-ROOT_URLCONF = 'csco.urls'
-# مسیر `.env` را به صورت مطلق مشخص کن
-BASE_DIR = Path(__file__).resolve().parent.parent
-ENV_PATH = BASE_DIR / "../env/.env"
-
-# بارگذاری متغیرهای محیطی
-load_dotenv(ENV_PATH)  # این خط را اضافه کن تا Django مطمئن شود که .env خوانده شده است
-
-CELERY_BROKER_URL = "redis://csco_redis:6379/1"
-CELERY_RESULT_BACKEND = "redis://csco_redis:6379/1"
-
-
-# Application definition
+# اپلیکیشن‌ها
 INSTALLED_APPS = [
-    "jazzmin",  # 👈 اضافه کردن قالب Jazzmin
+    "jazzmin",  # قالب مدیریت جنگو
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'whitenoise.runserver_nostatic',  # مدیریت استاتیک‌ها در حالت DEBUG=False
+    'django_celery_beat',  # زمان‌بندی تسک‌های Celery
+    'django_celery_results',  # ذخیره نتایج Celery
+    'rest_framework',  # Django REST Framework
+    'corsheaders',  # مدیریت CORS
 ]
 
+# میان‌افزارها
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # مدیریت استاتیک‌ها
+    'corsheaders.middleware.CorsMiddleware',  # فعال‌سازی CORS
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -45,10 +41,17 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# فعال‌سازی CORS برای ارتباط با کلاینت‌های خارجی
+CORS_ALLOW_ALL_ORIGINS = True
+
+ROOT_URLCONF = 'csco.urls'
+WSGI_APPLICATION = 'csco.wsgi.application'
+
+# تنظیمات قالب‌ها
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],  # مسیر قالب‌های سفارشی
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -61,10 +64,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'csco.wsgi.application'
-
-
-# تنظیمات پایگاه داده (PostgreSQL از .env خوانده می‌شود)
+# تنظیمات پایگاه داده (PostgreSQL)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -76,38 +76,58 @@ DATABASES = {
     }
 }
 
-# Password validation
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+# تنظیمات استاتیک و مدیا
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # مسیر `collectstatic`
+STATICFILES_DIRS = [BASE_DIR / 'backend/static']
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'backend/media'
+
+# پیدا کردن فایل‌های استاتیک
+STATICFILES_FINDERS = [
+    "django.contrib.staticfiles.finders.FileSystemFinder",
+    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
 ]
 
-# تنظیمات زبان و منطقه زمانی
-LANGUAGE_CODE = 'fa'  # فارسی
-TIME_ZONE = 'Asia/Tehran'  # منطقه زمانی ایران
-USE_I18N = True
-USE_TZ = True
-
-# پیش‌فرض برای مدل‌های دیتابیس
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
+# کشینگ و سشن‌ها
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.getenv("REDIS_URL", "redis://csco_redis:6379/1"),
+    }
+}
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
 
 # تنظیمات Celery و Redis
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://redis_cache:6379/1")
-CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://redis_cache:6379/1")
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://csco_redis:6379/1")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://csco_redis:6379/1")
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
+# Celery Beat زمان‌بندی تسک‌ها
+CELERY_BEAT_SCHEDULE = {
+    'example_task': {
+        'task': 'myapp.tasks.example_task',
+        'schedule': 30.0,  # هر 30 ثانیه اجرا شود
+    },
+}
+
+# اعتبارسنجی رمز عبور
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
+
+# تنظیمات زبان و منطقه زمانی
+LANGUAGE_CODE = 'fa'
+TIME_ZONE = 'Asia/Tehran'
+USE_I18N = True
+USE_TZ = True
 
 # تنظیمات ایمیل
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -117,13 +137,5 @@ EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "your-email@example.com")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "your-email-password")
 
-# تنظیمات سرویس پیامک (IPPANEL)
-IPPANEL_API_KEY = os.getenv("IPPANEL_API_KEY", "your-ippanel-api-key")
-
-# مسیرهای استاتیک و مدیا
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'backend/static']
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'backend/media'
+# کلید پیش‌فرض مدل‌ها
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
