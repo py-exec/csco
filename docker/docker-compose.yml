@@ -1,5 +1,3 @@
-#version: '3.8'
-
 services:
   web:
     build:
@@ -8,16 +6,18 @@ services:
     image: csco_django
     container_name: csco_django
     volumes:
-      - ../backend:/app  # اتصال کل پروژه جنگو
-      - ../backend/static:/app/static  # ذخیره فایل‌های استاتیک داخل backend
-      - ../backend/media:/app/media  # ذخیره فایل‌های مدیا داخل backend
+      - ../backend:/app
+      - ../backend/static:/app/static
+      - ../backend/media:/app/media
     working_dir: /app
     ports:
       - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
-    command: python manage.py runserver 0.0.0.0:8000
+      redis:
+        condition: service_healthy
+    command: gunicorn csco.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 2 --timeout 120
     env_file:
       - ../env/.env
 
@@ -30,10 +30,100 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ../database/postgres:/var/lib/postgresql/data  # 📌 تغییر مسیر ذخیره دیتابیس
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "py_exec", "-d", "csco_db" ]
+      test: ["CMD", "pg_isready", "-U", "py_exec", "-d", "csco_db"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7
+    container_name: csco_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: csco_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  celery:
+    image: csco_django
+    container_name: csco_celery
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: sh -c "sleep 10 && celery -A csco worker --loglevel=info"
+    volumes:
+      - ../backend:/app
+    env_file:
+      - ../env/.env
+    healthcheck:
+      test: ["CMD", "celery", "-A", "csco", "inspect", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  celery-beat:
+    image: csco_django
+    container_name: csco_celery_beat
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      celery:
+        condition: service_healthy
+    command: sh -c "sleep 10 && celery -A csco beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+    volumes:
+      - ../backend:/app
+      - celery_beat_data:/var/lib/celery-beat
+    env_file:
+      - ../env/.env
+    healthcheck:
+      test: ["CMD", "celery", "-A", "csco", "beat", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  flower:
+    image: mher/flower
+    container_name: csco_flower
+    restart: always
+    depends_on:
+      celery:
+        condition: service_healthy
+    command: sh -c "sleep 10 && flower --broker=redis://redis:6379/1 --port=5555"
+    ports:
+      - "5555:5555"
+    env_file:
+      - ../env/.env
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  redis_data:
+  celery_beat_data:

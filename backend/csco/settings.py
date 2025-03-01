@@ -20,8 +20,13 @@ ENV_PATH = BASE_DIR / "../env/.env"
 # بارگذاری متغیرهای محیطی
 load_dotenv(ENV_PATH)  # این خط را اضافه کن تا Django مطمئن شود که .env خوانده شده است
 
+CELERY_BROKER_URL = "redis://csco_redis:6379/1"
+CELERY_RESULT_BACKEND = "redis://csco_redis:6379/1"
+
+
 # Application definition
 INSTALLED_APPS = [
+    "jazzmin",  # 👈 اضافه کردن قالب Jazzmin
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -100,6 +105,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # تنظیمات Celery و Redis
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://redis_cache:6379/1")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://redis_cache:6379/1")
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
 
 # تنظیمات ایمیل
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

@@ -7,6 +7,11 @@
           <list>
             <option value="web" />
             <option value="db" />
+            <option value="redis" />
+            <option value="celery" />
+            <option value="celery-beat" />
+            <option value="flower" />
+            <option value="pgadmin" />
           </list>
         </option>
         <option name="sourceFilePath" value="docker/docker-compose.yml" />
