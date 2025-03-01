@@ -23,11 +23,14 @@ services:
     container_name: csco_postgres
     restart: always
     env_file:
-      - ../env/.env  # فقط این کافی است، دیگر نیازی به environment نیست
+      - ../env/.env
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ../database/postgres:/var/lib/postgresql/data  # 📌 تغییر مسیر ذخیره دیتابیس
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "py_exec", "-d", "csco_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-volumes:
-  postgres_data:
