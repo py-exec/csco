@@ -8,15 +8,18 @@ services:
     image: csco_django
     container_name: csco_django
     volumes:
-      - ../backend:/app
+      - ../backend:/app  # اتصال کل پروژه جنگو
+      - ../backend/static:/app/static  # ذخیره فایل‌های استاتیک داخل backend
+      - ../backend/media:/app/media  # ذخیره فایل‌های مدیا داخل backend
     working_dir: /app
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     command: python manage.py runserver 0.0.0.0:8000
     env_file:
-      - ../env/.env  # خواندن متغیرهای محیطی
+      - ../env/.env
 
   db:
     image: postgres:15
