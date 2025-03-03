@@ -1,20 +1,446 @@
-{% extends 'jet/base.html' %}
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فرم اطلاعات کارتن</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            direction: rtl;
+            text-align: right;
+        }
 
-{% block content %}
-<div class="container mt-4">
+        .form-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-label {
+            font-weight: bold;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .form-control {
+            text-align: left;
+            -moz-appearance: textfield; /* حذف دکمه‌های افزایش/کاهش در فایرفاکس */
+        }
+
+        /* حذف دکمه‌های افزایش/کاهش در کروم و سایر مرورگرها */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /*.hidden {*/
+        /*    display: none !important;*/
+        /*}*/
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // دریافت المان‌های فرم
+            const printingField = document.getElementById("printing");
+            const sheetRollField = document.getElementById("sheet_roll").closest(".col-md-4");
+            const joiningField = document.getElementById("joining");
+            const packagingField = document.getElementById("packaging");
+            const fluteField = document.getElementById("flute");
+            const layerCountField = document.getElementById("layer_count");
+            const coatingField = document.getElementById("coating").closest(".col-md-4");
+            const colorCountField = document.getElementById("color_count").closest(".col-md-4");
+            const topColorField = document.getElementById("top_color");
+            const materialCombinationField = document.getElementById("material_combination");
+            const modelField = document.getElementById("model");
+            const joiningFieldContainer = document.getElementById("joining-field");
+
+            const modelsWithJoining = ["B15", "B11", "B17", "B01+D", "B00", "B03", "B01+B"];
+
+            function preventNegativeInput(event) {
+                if (event.target.value < 0) {
+                    event.target.value = 0;
+                }
+            }
+
+            /**
+             * مدیریت قوانین فرم
+             * هر قانون را به این لیست اضافه کن
+             */
+            const rules = [];
+
+            function registerRule(ruleFunction) {
+                rules.push(ruleFunction);
+            }
+
+            function applyRules() {
+                rules.forEach(rule => rule());
+            }
+
+            /**
+             * قانون: مدیریت نیازهای لمینتی
+             */
+            function handleLaminatedOptions() {
+                let offsetOption = printingField.querySelector("option[value='offset']");
+
+                if (topColorField.value === "laminate") {
+                    if (!offsetOption) {
+                        let newOption = document.createElement("option");
+                        newOption.value = "offset";
+                        newOption.textContent = "افست";
+                        printingField.appendChild(newOption);
+                    }
+                    printingField.value = "offset";
+                    printingField.setAttribute("disabled", "true");
+                    sheetRollField.style.display = "block";
+                    coatingField.style.display = "block";
+                } else {
+                    printingField.removeAttribute("disabled");
+                    if (printingField.value === "offset") {
+                        printingField.value = "";
+                    }
+                    sheetRollField.style.display = "none";
+                    coatingField.style.display = "none";
+
+                    if (offsetOption) {
+                        offsetOption.remove();
+                    }
+                }
+            }
+
+            /**
+             * مدیریت تعداد لایه‌ها و فلوت‌ها به‌طور خودکار
+             */
+            const layerToFluteMap = {
+                "5": ["BC", "EB", "EC"],
+                "3": ["B", "E", "C"]
+            };
+
+function handleFluteAndLayer() {
+    const layerCountField = document.getElementById("layer_count");
+    const fluteField = document.getElementById("flute");
+
+    const layerToFluteMap = {
+        "5": ["BC", "EB", "EC"],
+        "3": ["B", "E", "C"]
+    };
+
+    const selectedLayer = layerCountField.value;
+    const currentFlute = fluteField.value; // ذخیره مقدار انتخاب‌شده فعلی
+
+    // پاک کردن گزینه‌ها و اضافه کردن مقدار "انتخاب کنید"
+    fluteField.innerHTML = '<option value="">انتخاب کنید</option>';
+
+    if (selectedLayer) {
+        layerToFluteMap[selectedLayer].forEach(flute => {
+            let option = document.createElement("option");
+            option.value = flute;
+            option.textContent = flute;
+            fluteField.appendChild(option);
+        });
+
+        // اگر مقدار قبلی همچنان معتبر باشد، آن را مجدداً انتخاب کن
+        if (layerToFluteMap[selectedLayer].includes(currentFlute)) {
+            fluteField.value = currentFlute;
+        }
+    }
+}
+
+
+            function toggleColorCountField() {
+                if (printingField.value === "flexo" || printingField.value === "offset") {
+                    colorCountField.style.display = "block";
+                } else {
+                    colorCountField.style.display = "none";
+                }
+            }
+
+
+            const materialOptions = {
+                "brown": [
+                    {value: "Brown eco", text: "قهوه‌ای اقتصادی"},
+                    {value: "Brown", text: "قهوه‌ای"},
+                    {value: "Brown TOP", text: "قهوه‌ای تاپ"},
+                    {value: "Brown BEST", text: "قهوه‌ای بست"},
+                    {value: "Brown Heavy", text: "قهوه‌ای سنگین"},
+                    {value: "Brown VIP", text: "قهوه‌ای وی‌آی‌پی"},
+                ],
+                "white": [
+                    {value: "White eco", text: "سفید اقتصادی"},
+                    {value: "White", text: "سفید"},
+                    {value: "WhiteTOP", text: "سفید تاپ"},
+                    {value: "White BEST", text: "سفید بست"},
+                    {value: "White VIP", text: "سفید وی‌آی‌پی"}
+                ],
+                "laminate": [
+                    {value: "Brown Laminet eghtesadi", text: "قهوه‌ای لمینت اقتصادی"},
+                    {value: "Brown Laminet", text: "قهوه‌ای لمینت"},
+                    {value: "Brown TOP Laminet", text: "قهوه‌ای تاپ لمینت"},
+                    {value: "Light White E Laminet eghtesadi", text: "سفید روشن E لمینت اقتصادی"},
+                    {value: "White Laminet eghtesadi", text: "سفید لمینت اقتصادی"},
+                    {value: "White Laminet", text: "سفید لمینت"},
+                    {value: "WhiteTOP Laminet", text: "سفید تاپ لمینت"},
+                    {value: "VIP Laminet", text: "وی‌آی‌پی لمینت"}
+                ]
+            };
+
+            function updateMaterialOptions() {
+                const selectedColor = topColorField.value;
+                materialCombinationField.innerHTML = '<option value="">انتخاب کنید</option>';
+
+                if (materialOptions[selectedColor]) {
+                    materialOptions[selectedColor].forEach(option => {
+                        let newOption = document.createElement("option");
+                        newOption.value = option.value;
+                        newOption.textContent = option.text;
+                        materialCombinationField.appendChild(newOption);
+                    });
+                }
+            }
+
+            function handleJoiningVisibility() {
+                if (modelsWithJoining.includes(modelField.value)) {
+                    joiningFieldContainer.style.display = "block"; // نمایش فیلد اتصال
+                } else {
+                    joiningFieldContainer.style.display = "none"; // مخفی کردن کامل فیلد اتصال
+                    joiningField.value = ""; // ریست مقدار اتصال
+                }
+            }
+
+
+            // ثبت قوانین در سیستم
+            registerRule(handleLaminatedOptions);
+            registerRule(handleFluteAndLayer);
+
+            /**
+             * بررسی اولیه هنگام لود صفحه
+             */
+            function initialSetup() {
+                applyRules();
+                toggleColorCountField();
+                handleJoiningVisibility();
+            }
+
+            /** رویدادهای مربوط به تغییر مقدار فیلدها **/
+            topColorField.addEventListener("change", applyRules);
+            fluteField.addEventListener("change", applyRules);
+            layerCountField.addEventListener("change", applyRules);
+            topColorField.addEventListener("change", updateMaterialOptions);
+            printingField.addEventListener("change", toggleColorCountField);
+            modelField.addEventListener("change", handleJoiningVisibility);
+            document.getElementById("length").addEventListener("input", preventNegativeInput);
+            document.getElementById("width").addEventListener("input", preventNegativeInput);
+            document.getElementById("height").addEventListener("input", preventNegativeInput);
+            document.getElementById("layer_count").addEventListener("change", handleFluteAndLayer);
+            // اجرای تنظیمات اولیه
+            initialSetup();
+
+        });
+    </script>
+</head>
+<body class="container mt-4">
+<div class="form-container">
     <h2 class="mb-4 text-center">فرم اطلاعات کارتن</h2>
-    <form method="post" class="row g-3">
+    <form id="cartonForm" method="post">
         {% csrf_token %}
-        {% for field in form %}
-        <div class="col-md-4">
-            <label class="form-label">{{ field.label }}</label>
-            {{ field }}
+        <div class="row g-3">
+            <!--            مدل-->
+            <div class="col-md-4">
+                <label for="model" class="form-label">مدل</label>
+                <select id="model" name="model" class="form-select">
+                    <option value="">انتخاب کنید</option>
+                    <option value="B01+B">B01+B</option>
+                    <option value="D27">D27</option>
+                    <option value="B15">B15</option>
+                    <option value="B11">B11</option>
+                    <option value="B17">B17</option>
+                    <option value="B01+D">B01+D</option>
+                    <option value="B00">B00</option>
+                    <option value="B03">B03</option>
+                </select>
+            </div>
+            <!--تعداد سفارش            -->
+            <div class="col-md-4">
+                <label for="order_quantity" class="form-label">تعداد سفارش</label>
+                <input type="number" id="order_quantity" name="order_quantity" class="form-control"
+                       placeholder="مثلاً 1501">
+            </div>
+            <!--            ابعاد درخواستی-->
+            <div class="col-md-4">
+                <label for="dimensions" class="form-label">ابعاد درخواستی</label>
+                <select id="dimensions" name="dimensions" class="form-select">
+                    <option value="">انتخاب کنید</option>
+                    <option value="internal">داخلی کارتن</option>
+                    <option value="external">خارجی کارتن</option>
+                </select>
+            </div>
+            <!--طول            -->
+            <div class="col-md-4">
+                <label for="length" class="form-label">طول</label>
+                <div class="input-group">
+                    <input type="number" id="length" name="length" class="form-control" min="0">
+                    <span class="input-group-text">سانتی‌متر</span>
+                </div>
+            </div>
+            <!--            عرض-->
+            <div class="col-md-4">
+                <label for="width" class="form-label">عرض</label>
+                <div class="input-group">
+                    <input type="number" id="width" name="width" class="form-control" min="0">
+                    <span class="input-group-text">سانتی‌متر</span>
+                </div>
+            </div>
+            <!--ارتقاع            -->
+            <div class="col-md-4">
+                <label for="height" class="form-label">ارتفاع</label>
+                <div class="input-group">
+                    <input type="number" id="height" name="height" class="form-control" min="0">
+                    <span class="input-group-text">سانتی‌متر</span>
+                </div>
+            </div>
+            <!--      زمان      -->
+            <div class="col-md-4">
+                <label for="time" class="form-label">زمان</label>
+                <select id="time" name="time" class="form-select">
+                    <option value="">انتخاب کنید</option>
+                    <option value="1w">1w</option>
+                    <option value="2w">2w</option>
+                    <option value="4w">4w</option>
+                    <option value="shop">Shop</option>
+                </select>
+            </div>
+            <!--        رنگ رویه    -->
+            <div class="col-md-4">
+                <label for="top_color" class="form-label">رنگ رویه</label>
+                <select id="top_color" name="top_color" class="form-select">
+                    <option value="">انتخاب کنید</option>
+                    <option value="brown">قهوه‌ای</option>
+                    <option value="white">سفید</option>
+                    <option value="laminate">لمینت</option>
+                </select>
+            </div>
+            <!--       تعداد لایه     -->
+            <div class="col-md-4">
+                <label for="layer_count" class="form-label">تعداد لایه</label>
+                <select id="layer_count" name="layer_count" class="form-select">
+                    <option value="">انتخاب کنید</option>
+                    <option value="3">3</option>
+                    <option value="5">5</option>
+                </select>
+            </div>
+            <!--       فلوت     -->
+            <div class="col-md-4">
+                <label for="flute" class="form-label">فلوت</label>
+                <select id="flute" name="flute" class="form-select">
+                    <option value="">انتخاب کنید</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="E">E</option>
+                    <option value="BC">BC</option>
+                    <option value="EB">EB</option>
+                    <option value="EC">EC</option>
+                </select>
+            </div>
+            <!--     ترکیب متریال<       -->
+            <div class="col-md-4">
+                <label for="material_combination" class="form-label">ترکیب متریال</label>
+                <select id="material_combination" name="material_combination" class="form-select">
+                    <option value="">انتخاب کنید</option>
+                </select>
+            </div>
+            <!--       چاپ     -->
+            <div class="col-md-4">
+                <label for="printing" class="form-label">چاپ</label>
+                <select id="printing" name="printing" class="form-select">
+                    <option value="">انتخاب کنید</option>
+                    <option value="flexo">فلکسو</option>
+                    <option value="offset">افست</option>
+                </select>
+            </div>
+            <!--      انتخاب شیت و رول مقوا در لمینتی      -->
+            <div class="col-md-4">
+                <label for="sheet_roll" class="form-label">انتخاب شیت و رول مقوا در لمینتی</label>
+                <select id="sheet_roll" name="sheet_roll" class="form-select">
+                    <option value="">انتخاب کنید</option>
+                    <option value="sheet">شیت</option>
+                    <option value="roll">رول</option>
+                </select>
+            </div>
+            <!--       روکش     -->
+            <div class="col-md-4">
+                <label for="coating" class="form-label">روکش</label>
+                <select id="coating" name="coating" class="form-select">
+                    <option value="">انتخاب کنید</option>
+                    <option value="none">ندارد</option>
+                    <option value="mat_thermal">مات حرارتی</option>
+                    <option value="mat_water">مات واتر بیس</option>
+                    <option value="glossy_thermal">براق حرارتی</option>
+                    <option value="glossy_water">براق واتر بیس</option>
+                    <option value="uv">UV</option>
+                    <option value="varnish">ورنی</option>
+                </select>
+            </div>
+            <!--     تعداد رنگ       -->
+            <div class="col-md-4">
+                <label for="color_count" class="form-label">تعداد رنگ</label>
+                <select id="color_count" name="color_count" class="form-select">
+                    <option value="">انتخاب کنید</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                </select>
+            </div>
+
+            <!--     انتخاب اتصال       -->
+            <div class="col-md-4 hidden" id="joining-field">
+                <label for="joining" class="form-label">اتصال</label>
+                <select id="joining" name="joining" class="form-select">
+                    <option value="">انتخاب کنید</option>
+                    <option value="glue">چسب</option>
+                    <option value="staple">منگنه</option>
+                    <option value="both">منگنه + چسب</option>
+                </select>
+            </div>
+            <!--     انتخاب گروه      -->
+            <div class="col-md-4">
+                <label for="group_selection" class="form-label">انتخاب گروه</label>
+                <select id="group_selection" name="group_selection" class="form-select">
+                    <option value="">انتخاب کنید</option>
+                    <option value="all">تمام عرض‌ها</option>
+                    <option value="main">عرض‌های اصلی</option>
+                    <option value="sub1">عرض‌های فرعی ۱</option>
+                    <option value="sub2">عرض‌های فرعی ۲</option>
+                    <option value="sub3">عرض‌های فرعی ۳</option>
+                </select>
+            </div>
+            <!--        بسته‌بندی ارسال    -->
+            <div class="col-md-4">
+                <label for="packaging" class="form-label">بسته‌بندی ارسال</label>
+                <select id="packaging" name="packaging" class="form-select">
+                    <option value="">انتخاب کنید</option>
+                    <option value="none">بدون بسته‌بندی</option>
+                    <option value="pallet">پالت</option>
+                    <option value="shrink">شرینگ</option>
+                    <option value="pallet_shrink">پالت و شرینگ</option>
+                </select>
+            </div>
         </div>
-        {% endfor %}
-        <div class="col-md-12 text-center mt-4">
-            <button type="submit" class="btn btn-primary">ارسال</button>
-            <button type="reset" class="btn btn-secondary">ریست</button>
+        <div class="row g-3 mt-2">
+            <div class="btn-group mt-4">
+                <button type="submit" class="btn btn-primary">ارسال</button>
+                <button type="reset" class="btn btn-secondary">ریست</button>
+            </div>
         </div>
     </form>
 </div>
-{% endblock %}
+
+
+</body>
+</html>

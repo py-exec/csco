@@ -14,8 +14,9 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").replace('"', '
 
 # اپلیکیشن‌ها
 INSTALLED_APPS = [
-    'jazzmin',  # قالب مدیریت جنگو
     # 'jet',  # 🔹 اضافه کردن django-jet
+    'jazzmin',  # قالب مدیریت جنگو
+    # 'jet.dashboard',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -52,15 +53,15 @@ WSGI_APPLICATION = 'csco.wsgi.application'
 # تنظیمات قالب‌ها
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'frontend'],  # مسیر قالب‌های سفارشی
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": ["/frontend"],  # ✅ مسیر صحیح قالب‌ها
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
@@ -78,7 +79,6 @@ DATABASES = {
     }
 }
 
-
 # تنظیمات استاتیک و مدیا
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
@@ -89,8 +89,6 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = Path("/frontend/media")  # ✅ مسیر فایل‌های رسانه‌ای
-
-
 
 # پیدا کردن فایل‌های استاتیک
 STATICFILES_FINDERS = [

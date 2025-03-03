@@ -1,13 +1,12 @@
 from django.shortcuts import render
 from .forms import CartonForm
 
-def carton_form_view(request):
+def carton_form(request):
     if request.method == "POST":
         form = CartonForm(request.POST)
         if form.is_valid():
-            # ذخیره اطلاعات فرم یا پردازش آن
-            return render(request, "your_app/success.html", {"form": form})
+            return render(request, "clac_box/success.html", {"form": form})  # نمایش صفحه موفقیت
     else:
         form = CartonForm()
 
-    return render(request, "your_app/carton_form.html", {"form": form})
+    return render(request, "clac_box/carton_form.html", {"form": form})  # مسیر صحیح قالب
