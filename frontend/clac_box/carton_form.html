@@ -1,0 +1,20 @@
+{% extends 'jet/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4 text-center">فرم اطلاعات کارتن</h2>
+    <form method="post" class="row g-3">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="col-md-4">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+        </div>
+        {% endfor %}
+        <div class="col-md-12 text-center mt-4">
+            <button type="submit" class="btn btn-primary">ارسال</button>
+            <button type="reset" class="btn btn-secondary">ریست</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

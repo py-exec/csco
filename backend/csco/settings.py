@@ -14,7 +14,8 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").replace('"', '
 
 # اپلیکیشن‌ها
 INSTALLED_APPS = [
-    "jazzmin",  # قالب مدیریت جنگو
+    'jazzmin',  # قالب مدیریت جنگو
+    # 'jet',  # 🔹 اضافه کردن django-jet
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -26,6 +27,7 @@ INSTALLED_APPS = [
     'django_celery_results',  # ذخیره نتایج Celery
     'rest_framework',  # Django REST Framework
     'corsheaders',  # مدیریت CORS
+
 ]
 
 # میان‌افزارها
@@ -51,7 +53,7 @@ WSGI_APPLICATION = 'csco.wsgi.application'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "templates"],  # مسیر قالب‌های سفارشی
+        'DIRS': [BASE_DIR / 'frontend'],  # مسیر قالب‌های سفارشی
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -76,14 +78,19 @@ DATABASES = {
     }
 }
 
+
 # تنظیمات استاتیک و مدیا
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'  # مسیر `collectstatic`
-STATICFILES_DIRS = [BASE_DIR / 'backend/static']
+STATICFILES_DIRS = [
+    Path("/frontend/static"),  # ✅ مسیر استاتیک در سطح root کانتینر
+]
+STATIC_ROOT = Path("/frontend/staticfiles")  # ✅ مسیر جمع‌آوری فایل‌های استاتیک
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'backend/media'
+MEDIA_ROOT = Path("/frontend/media")  # ✅ مسیر فایل‌های رسانه‌ای
+
+
 
 # پیدا کردن فایل‌های استاتیک
 STATICFILES_FINDERS = [
@@ -108,12 +115,12 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
 # Celery Beat زمان‌بندی تسک‌ها
-CELERY_BEAT_SCHEDULE = {
-    'example_task': {
-        'task': 'myapp.tasks.example_task',
-        'schedule': 30.0,  # هر 30 ثانیه اجرا شود
-    },
-}
+# CELERY_BEAT_SCHEDULE = {
+#     'example_task': {
+#         'task': 'myapp.tasks.example_task',
+#         'schedule': 30.0,  # هر 30 ثانیه اجرا شود
+#     },
+# }
 
 # اعتبارسنجی رمز عبور
 AUTH_PASSWORD_VALIDATORS = [

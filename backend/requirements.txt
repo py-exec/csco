@@ -42,3 +42,4 @@ billiard==4.2.1  # ✅ وابستگی مهم برای Celery
 vine==5.1.0  # ✅ وابستگی مهم برای Celery
 click==8.1.8  # ✅ برای Celery CLI
 whitenoise
+django-jet
