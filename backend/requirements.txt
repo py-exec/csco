@@ -1,3 +1,7 @@
+Django>=4.2,<5.0  # نسخه پایدار Django
+django-adminlte3==0.1.6  # آخرین نسخه پایدار
+pandas==2.2.3
+numpy==1.26.4
 amqp==5.3.1
 asgiref==3.8.1
 billiard==4.2.1
@@ -10,7 +14,6 @@ click-plugins==1.1.1
 click-repl==0.3.0
 cron-descriptor==1.4.5
 cryptography==44.0.0
-Django==4.2.11
 django-axes==7.0.1
 django-celery-beat==2.5.0
 django-celery-results==2.5.1
@@ -36,8 +39,6 @@ kombu==5.4.2
 packaging==24.2
 pillow==11.0.0
 prompt_toolkit==3.0.50
-psycopg2==2.9.10
-psycopg2-binary==2.9.10
 pycparser==2.22
 pypng==0.20220715.0
 python-crontab==3.2.0
@@ -54,3 +55,7 @@ urllib3==2.2.3
 vine==5.1.0
 wcwidth==0.2.13
 whitenoise==6.9.0
+psycopg2==2.9.10
+psycopg2-binary==2.9.10
+django_select2
+

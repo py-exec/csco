@@ -6,10 +6,10 @@ services:
     image: csco_django
     container_name: csco_django
     volumes:
-      - ../backend:/app  # بکند در مسیر `/app`
+      - ../backend:/app  # نگه‌داشتن بکند در `/app`
       - ../frontend:/frontend  # ✅ نگه‌داشتن فرانت‌اند خارج از `/app`
-      - ../frontend/static:/frontend/static  # ✅ مسیر استاتیک
-      - ../frontend/staticfiles:/frontend/staticfiles  # ✅ مسیر staticfiles
+      - ../frontend/static:/frontend/static  # ✅ مسیر استاتیک (جمع‌آوری شده)
+      - ../frontend/staticfiles:/frontend/staticfiles  # ✅ مسیر نهایی staticfiles
       - ../frontend/media:/frontend/media  # ✅ مسیر مدیا
     working_dir: /app
     ports:
@@ -19,7 +19,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: gunicorn csco.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 2 --timeout 120
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn csco.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 2 --timeout 120"
     env_file:
       - ../env/.env
 
@@ -68,64 +71,7 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
-#  celery:
-#    image: csco_django
-#    container_name: csco_celery
-#    restart: always
-#    depends_on:
-#      db:
-#        condition: service_healthy
-#      redis:
-#        condition: service_healthy
-#    command: sh -c "sleep 10 && celery -A csco worker --loglevel=info"
-#    volumes:
-#      - ../backend:/app
-#    env_file:
-#      - ../env/.env
-#    healthcheck:
-#      test: ["CMD", "celery", "-A", "csco", "inspect", "ping"]
-#      interval: 10s
-#      timeout: 5s
-#      retries: 5
-#
-#  celery-beat:
-#    image: csco_django
-#    container_name: csco_celery_beat
-#    restart: always
-#    depends_on:
-#      db:
-#        condition: service_healthy
-#      redis:
-#        condition: service_healthy
-#      celery:
-#        condition: service_healthy
-#    command: sh -c "sleep 10 && celery -A csco beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
-#    volumes:
-#      - ../backend:/app
-#      - celery_beat_data:/var/lib/celery-beat
-#    env_file:
-#      - ../env/.env
-#    healthcheck:
-#      test: ["CMD", "celery", "-A", "csco", "beat", "healthcheck"]
-#      interval: 10s
-#      timeout: 5s
-#      retries: 5
-#
-#  flower:
-#    image: mher/flower
-#    container_name: csco_flower
-#    restart: always
-#    depends_on:
-#      celery:
-#        condition: service_healthy
-#    command: sh -c "sleep 10 && flower --broker=redis://redis:6379/1 --port=5555"
-#    ports:
-#      - "5555:5555"
-#    env_file:
-#      - ../env/.env
-
 volumes:
   postgres_data:
   pgadmin_data:
   redis_data:
-#  celery_beat_data:
